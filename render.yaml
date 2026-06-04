@@ -1,0 +1,20 @@
+# Render Blueprint — BIST Algo Terminal (web servis)
+#
+# ÖNEMLİ: --workers 1 zorunlu. Uygulama taramayı arka plan thread'inde yapıp
+# sonucu bellekte tutar; birden fazla worker olursa poll farklı sürece düşer ve
+# sonuç gelmez. Eşzamanlı istekler için worker yerine --threads kullanılır.
+services:
+  - type: web
+    name: bist-algo-terminal
+    runtime: python
+    plan: free
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn bistterminal.wsgi:application --workers 1 --threads 8 --timeout 120 --bind 0.0.0.0:$PORT"
+    healthCheckPath: /
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true
