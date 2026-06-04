@@ -13,6 +13,10 @@ env/
 *.log
 db.sqlite3
 db.sqlite3-journal
+staticfiles/
+
+# Vercel
+.vercel/
 
 # Environment / secrets
 .env
