@@ -22,9 +22,16 @@
     return { bg: "rgba(234,179,8,.12)", fg: "#eab308" };
   }
 
-  // strateji öncelik sırası (sıralama için)
-  const STRAT_RANK = { KIRILIM_AL: 5, PUSU_AL: 4, TABAN_RISKI: 3, KACIS: 2, IZLE: 0 };
+  // strateji öncelik sırası (sıralama için) — alım sinyalleri üstte
+  const STRAT_RANK = {
+    KIRILIM_AL: 7, PUSU_AL: 6, TEPKI_ALIMI: 5, TRENDI_KORU: 4,
+    KONSOLIDE: 3, ZAYIF_TREND: 2, KACIS: 1, TABAN_RISKI: 0, IZLE: 0,
+  };
   const REGIME_RANK = { BOGA: 2, YATAY: 1, AYI: 0 };
+
+  // büyük tam sayı (toplam lot) için binlik ayraçlı format
+  const fmtLot = (v) =>
+    v === null || v === undefined ? "—" : Math.round(Number(v)).toLocaleString("tr-TR");
 
   /* ---------- KPI ---------- */
   function updateKpis() {
@@ -82,6 +89,7 @@
           <td class="num"><span class="rsi-pill" style="background:${rc.bg};color:${rc.fg}">${fmt(r.rsi, 0)}</span></td>
           <td class="num">${fmt(r.pivot)}</td>
           <td class="num">${fmt(r.stop_loss)}</td>
+          <td class="num">${fmtLot(r.lot)}</td>
         </tr>`;
       })
       .join("");

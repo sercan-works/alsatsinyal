@@ -127,9 +127,13 @@ def analyze_dataframe(symbol: str, df: pd.DataFrame) -> dict | None:
     parkinson_vol = np.sqrt((1 / (4 * np.log(2))) * np.mean(log_hl ** 2))
     vol_buffer = guncel_fiyat * parkinson_vol * 1.5
 
-    # --- 3. HARMONİK PİVOT ---
+    # --- 3. HARMONİK PİVOT + DESTEK/DİRENÇ HARİTASI ---
     prev_h, prev_l, prev_c = float(h[-2]), float(l[-2]), float(c[-2])
     pivot = (prev_h + prev_l + prev_c) / 3.0
+    r1 = (2 * pivot) - prev_l
+    s1 = (2 * pivot) - prev_h
+    r2 = pivot + (prev_h - prev_l)
+    s2 = pivot - (prev_h - prev_l)
 
     # --- 4. INSTITUTIONAL VOLUME Z-SCORE ---
     v_mean = np.mean(v[-21:-1])
@@ -146,21 +150,63 @@ def analyze_dataframe(symbol: str, df: pd.DataFrame) -> dict | None:
     strategy = NEUTRAL_STRATEGY
     strategy_label = "İZLE / NÖTR"
     stop_loss = guncel_fiyat - vol_buffer
+    yorum = ""
 
     if is_bull:
         if volume_zscore > 1.645 and guncel_fiyat >= np.max(c[-21:-1]):
-            strategy, strategy_label = "KIRILIM_AL", "🚀 HACİMLİ KIRILIM AL"
+            strategy, strategy_label = "KIRILIM_AL", "🚀 KIRILIM AL"
             stop_loss = guncel_fiyat - (vol_buffer * 0.8)
+            yorum = (
+                f"Ana trend BOĞA. Güçlü balina hacmiyle direnç kırıldı. "
+                f"{guncel_fiyat:.2f} üzerinden momentum hızlanabilir. Stop: {stop_loss:.2f}"
+            )
         elif rsi < 38 and guncel_fiyat <= pivot:
-            strategy, strategy_label = "PUSU_AL", "🎯 DESTEKTEN PUSU AL"
+            strategy, strategy_label = "PUSU_AL", "🎯 PUSU AL"
             stop_loss = pivot - vol_buffer
+            yorum = (
+                f"Yükselen trendde sağlıklı düzeltme. İlk alım tepki bölgesi olan "
+                f"{s1:.2f} ve Pivot {pivot:.2f} kademeli pusu alanı."
+            )
+        else:
+            strategy, strategy_label = "TRENDI_KORU", "📈 TRENDİ KORU"
+            yorum = (
+                f"Yükselen ana trend gücünü koruyor. {s1:.2f} ana desteği üzerinde "
+                f"kaldığı sürece pozisyonlar orta vade taşınabilir."
+            )
     elif is_bull is False:
         if guncel_fiyat <= np.min(c[-21:-1]):
-            strategy, strategy_label = "TABAN_RISKI", "💀 TEHLİKE TABAN RİSKİ"
+            strategy, strategy_label = "TABAN_RISKI", "💀 TABAN RİSKİ"
             stop_loss = guncel_fiyat + vol_buffer
+            yorum = (
+                f"Net AYI piyasası. Destekler kırılıyor, yeni dip arayışı aktif. "
+                f"{s2:.2f} seviyesine kadar alım yapmak yüksek risk taşır."
+            )
         elif rsi > 65:
-            strategy, strategy_label = "KACIS", "❌ MAL BOŞALTMA/KAÇIŞ"
+            strategy, strategy_label = "KACIS", "❌ KAÇIŞ/SAT"
             stop_loss = guncel_fiyat + (vol_buffer * 0.5)
+            yorum = (
+                f"Düşüş trendinde geçici tepki yükselişi. RSI şişti. "
+                f"{r1:.2f} ve {r2:.2f} dirençleri mal boşaltma ve nakde geçiş yeridir."
+            )
+        else:
+            strategy, strategy_label = "ZAYIF_TREND", "🚨 ZAYIF TREND"
+            yorum = (
+                f"Fiyat hareketli ortalamaların altında eziliyor. {pivot:.2f} direnci "
+                f"aşılmadıkça nakitte kalıp izlemek en güvenli aksiyondur."
+            )
+    else:
+        if rsi < 35:
+            strategy, strategy_label = "TEPKI_ALIMI", "🛒 TEPKİ ALIMI"
+            yorum = (
+                f"Yatay bantta konsolide oluyor. RSI aşırı satımda. {s1:.2f} desteğinden "
+                f"gelebilecek tepki yükselişi tradable durumdadır."
+            )
+        else:
+            strategy, strategy_label = "KONSOLIDE", "⚖️ KONSOLİDE"
+            yorum = (
+                f"Belirli bir fiyat aralığında akümülasyon (mal toplama) evresi. "
+                f"{s1:.2f} - {r1:.2f} bandı arası git-gel ticareti uygundur."
+            )
 
     return {
         "symbol": symbol.replace(".IS", ""),
@@ -174,14 +220,21 @@ def analyze_dataframe(symbol: str, df: pd.DataFrame) -> dict | None:
         "parkinson_vol": _f(parkinson_vol),
         "vol_buffer": _f(vol_buffer),
         "pivot": _f(pivot),
+        "r1": _f(r1),
+        "r2": _f(r2),
+        "s1": _f(s1),
+        "s2": _f(s2),
         "volume_zscore": _f(volume_zscore),
         "hacim": hacim,
         "hacim_label": hacim_label,
         "rsi": _f(rsi),
         "strategy": strategy,
         "strategy_label": strategy_label,
-        "is_action": strategy != NEUTRAL_STRATEGY,
+        # "Aktif sinyal" = doğrudan alım fırsatı (her hisse artık bir strateji alır).
+        "is_action": strategy in ("KIRILIM_AL", "PUSU_AL", "TEPKI_ALIMI"),
         "stop_loss": _f(stop_loss),
+        "yorum": yorum,
+        "lot": None,  # scanner._fetch_lot tarafından doldurulur
     }
 
 

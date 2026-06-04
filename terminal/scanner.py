@@ -19,6 +19,40 @@ _BATCH_SIZE = 40
 _lock = threading.Lock()
 _thread: threading.Thread | None = None
 
+# Toplam lot (sharesOutstanding) cache'i. Lot/float nadiren değişir; sunucu
+# ömrü boyunca tutulur, böylece her taramada tekrar tekrar çekilmez.
+_lot_cache: dict[str, float | None] = {}
+
+
+def _fetch_lot(ticker: str) -> float | None:
+    """Hissenin toplam lot (sharesOutstanding) değerini döndürür.
+
+    Önce cache'e bakar; yoksa hızlı `fast_info`, olmazsa `.info` fallback dener.
+    Veri yoksa/başarısızsa None döner — hisse ASLA atlanmaz. Başarılı sonuç
+    (None dahil değil) cache'lenir.
+    """
+    if ticker in _lot_cache:
+        return _lot_cache[ticker]
+
+    lot: float | None = None
+    try:
+        tk = yf.Ticker(ticker)
+        # fast_info hızlıdır ve genelde 'shares' alanını taşır.
+        try:
+            shares = tk.fast_info.get("shares") if hasattr(tk.fast_info, "get") else None
+        except Exception:
+            shares = None
+        if not shares:
+            shares = tk.info.get("sharesOutstanding")
+        if shares:
+            lot = float(shares)
+    except Exception:
+        lot = None
+
+    if lot is not None:
+        _lot_cache[ticker] = lot  # yalnızca geçerli değeri kalıcı cache'le
+    return lot
+
 _state = {
     "status": "idle",          # idle | running | done | error
     "progress": {"done": 0, "total": len(analysis.HISSELER)},
@@ -80,6 +114,12 @@ def _run_scan():
                     sub = _extract_single(batch, ticker) if batch is not None else None
                     if sub is not None:
                         row = analysis.analyze_dataframe(ticker, sub)
+                        if row is not None:
+                            # Lot çekimi taramayı bozmamalı; hata olsa da satır eklenir.
+                            try:
+                                row["lot"] = _fetch_lot(ticker)
+                            except Exception:
+                                row["lot"] = None
                 except Exception:
                     row = None
 
