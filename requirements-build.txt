@@ -1,0 +1,2 @@
+# Yalnızca .exe derlemek için gereken araçlar (çalışma zamanı bağımlılığı değil).
+pyinstaller==6.11.1

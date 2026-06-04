@@ -1,0 +1,41 @@
+name: Build Windows EXE
+
+# Windows .exe'yi GitHub'ın Windows sunucusunda derler ve indirilebilir
+# artefakt olarak yükler. Manuel tetiklenir veya bir vX.Y.Z tag'i pushlanınca
+# çalışıp Releases'a exe ekler.
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Bağımlılıkları kur
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-build.txt
+
+      - name: .exe derle
+        run: pyinstaller --noconfirm --clean bist_terminal.spec
+
+      - name: Artefaktı yükle
+        uses: actions/upload-artifact@v4
+        with:
+          name: BIST-Algo-Terminal-windows
+          path: dist/BIST-Algo-Terminal.exe
+
+      - name: Tag'liyse Release'e ekle
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/BIST-Algo-Terminal.exe

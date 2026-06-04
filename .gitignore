@@ -18,6 +18,12 @@ staticfiles/
 # Vercel
 .vercel/
 
+# PyInstaller / build çıktıları
+build/
+dist/
+build-venv/
+*.manifest
+
 # Environment / secrets
 .env
 .env.*
