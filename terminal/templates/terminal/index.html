@@ -1,0 +1,106 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BIST Algo Terminal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{% static 'terminal/css/app.css' %}" />
+</head>
+<body>
+  <!-- ÜST BAR -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">🏛️</span>
+      <div>
+        <h1>BIST ALGO TERMİNALİ</h1>
+        <p class="sub">Parkinson Volatilitesi &amp; Kurumsal Hacim Güven Sınırı Süzgeci · v4.3</p>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span id="lastScan" class="last-scan">Henüz taranmadı</span>
+      <button id="scanBtn" class="scan-btn">
+        <span class="scan-btn-label">▶ TARAMAYI BAŞLAT</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- İLERLEME -->
+  <div id="progressWrap" class="progress-wrap hidden">
+    <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+    <span id="progressText" class="progress-text">0 / 0</span>
+  </div>
+
+  <!-- KPI KARTLARI -->
+  <section class="kpis">
+    <div class="kpi"><div class="kpi-val" id="kpiTotal">—</div><div class="kpi-lbl">Taranan</div></div>
+    <div class="kpi bull"><div class="kpi-val" id="kpiBull">—</div><div class="kpi-lbl">🟢 Boğa</div></div>
+    <div class="kpi bear"><div class="kpi-val" id="kpiBear">—</div><div class="kpi-lbl">🔴 Ayı</div></div>
+    <div class="kpi flat"><div class="kpi-val" id="kpiFlat">—</div><div class="kpi-lbl">🟡 Yatay</div></div>
+    <div class="kpi action"><div class="kpi-val" id="kpiAction">—</div><div class="kpi-lbl">⚡ Aktif Sinyal</div></div>
+    <div class="kpi whale"><div class="kpi-val" id="kpiWhale">—</div><div class="kpi-lbl">🐋 Balina Girişi</div></div>
+  </section>
+
+  <!-- FİLTRELER -->
+  <section class="filters">
+    <input id="searchInput" class="search" type="text" placeholder="🔎 Hisse ara (örn. THYAO)" />
+    <div class="chips" id="regimeChips">
+      <button class="chip active" data-regime="ALL">Tümü</button>
+      <button class="chip" data-regime="BOGA">🟢 Boğa</button>
+      <button class="chip" data-regime="AYI">🔴 Ayı</button>
+      <button class="chip" data-regime="YATAY">🟡 Yatay</button>
+    </div>
+    <label class="toggle">
+      <input type="checkbox" id="actionOnly" />
+      <span>Sadece aksiyon sinyalleri</span>
+    </label>
+    <label class="toggle">
+      <input type="checkbox" id="whaleOnly" />
+      <span>🐋 Sadece balina girişi</span>
+    </label>
+    <span class="count" id="rowCount"></span>
+  </section>
+
+  <!-- TABLO -->
+  <main class="table-wrap">
+    <table class="grid">
+      <thead>
+        <tr>
+          <th data-sort="symbol" class="sortable">Hisse</th>
+          <th data-sort="fiyat" class="sortable num">Anlık ₺</th>
+          <th data-sort="regime" class="sortable">Piyasa Yönü</th>
+          <th data-sort="hacim" class="sortable">Hacim Gücü</th>
+          <th data-sort="strategy" class="sortable">Algo Stratejisi</th>
+          <th data-sort="rsi" class="sortable num">RSI</th>
+          <th data-sort="pivot" class="sortable num">Denge/Pivot</th>
+          <th data-sort="stop_loss" class="sortable num">Mutlak Stop</th>
+        </tr>
+      </thead>
+      <tbody id="grid"></tbody>
+    </table>
+    <div id="emptyState" class="empty">
+      <p>Veri yok. Yukarıdan <strong>Taramayı Başlat</strong>'a bas.</p>
+    </div>
+  </main>
+
+  <!-- DETAY DRAWER -->
+  <div id="drawerOverlay" class="drawer-overlay hidden"></div>
+  <aside id="drawer" class="drawer">
+    <div class="drawer-head">
+      <h2 id="drawerSym">—</h2>
+      <button id="drawerClose" class="drawer-close">✕</button>
+    </div>
+    <div id="drawerBody" class="drawer-body">
+      <div class="drawer-loading">Yükleniyor…</div>
+    </div>
+  </aside>
+
+  <footer class="footer">
+    <span>🎯 Akıllı Süzgeç · Veriler yfinance üzerinden gecikmeli olabilir. Yatırım tavsiyesi değildir.</span>
+  </footer>
+
+  <script src="{% static 'terminal/js/app.js' %}"></script>
+</body>
+</html>
